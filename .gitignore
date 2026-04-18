@@ -1,0 +1,22 @@
+# Python
+.env
+backend/.env
+credentials.json
+client_secret.json
+user_token.pickle
+__pycache__/
+*.pyc
+.venv/
+*.pdf
+seen.json
+scheduler.log
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# System
+.DS_Store
+Thumbs.db
