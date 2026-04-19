@@ -1,9 +1,12 @@
+import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from datetime import datetime
 import os
 from textwrap import wrap
+
+logger = logging.getLogger(__name__)
 
 def create_portfolio(business_name, services_text, filename=None):
     """Generate a professional, readable PDF portfolio with proper text wrapping."""
@@ -17,7 +20,6 @@ def create_portfolio(business_name, services_text, filename=None):
     right_margin = width - 60
     text_width = right_margin - left_margin
 
-    # Header
     c.setFillColorRGB(0.1, 0.3, 0.6)
     c.rect(0, height - 80, width, 80, fill=True, stroke=False)
     c.setFillColor(colors.white)
@@ -27,7 +29,6 @@ def create_portfolio(business_name, services_text, filename=None):
     c.setFont("Helvetica", 10)
     c.drawRightString(right_margin, height - 65, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-    # Intro
     c.setFillColor(colors.black)
     c.setFont("Helvetica", 12)
     c.drawString(left_margin, height - 110, "Welcome to your Smart Marketing Portfolio!")
@@ -43,7 +44,6 @@ def create_portfolio(business_name, services_text, filename=None):
         c.drawString(left_margin, y, line)
         y -= 15
 
-    # Services
     y -= 20
     c.setFont("Helvetica-Bold", 14)
     c.setFillColorRGB(0.1, 0.3, 0.6)
@@ -64,7 +64,6 @@ def create_portfolio(business_name, services_text, filename=None):
             y -= 15
         y -= 5
 
-    # Impact section
     y -= 10
     c.setFont("Helvetica-Bold", 13)
     c.setFillColorRGB(0.1, 0.3, 0.6)
@@ -81,11 +80,10 @@ def create_portfolio(business_name, services_text, filename=None):
         c.drawString(left_margin, y, line)
         y -= 15
 
-    # Footer
     c.setFont("Helvetica-Oblique", 10)
     c.setFillColorRGB(0.1, 0.3, 0.6)
     c.drawString(left_margin, 40, "Smart Marketing Assistant – Auto-Generated Portfolio | Powered by AI Automation")
 
     c.save()
-    print(f"✅ Professional Portfolio (wrapped text) created: {os.path.abspath(filename)}")
+    logger.info("Professional portfolio created: %s", os.path.abspath(filename))
     return filename

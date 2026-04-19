@@ -1,5 +1,7 @@
-# utils.py
+import logging
 import json, os
+
+logger = logging.getLogger(__name__)
 
 SEEN_FILE = "seen.json"
 

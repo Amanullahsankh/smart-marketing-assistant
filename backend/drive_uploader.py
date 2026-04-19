@@ -1,17 +1,17 @@
-# drive_uploader.py
+import logging
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
 import pickle, os
 
+logger = logging.getLogger(__name__)
+
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
 def upload_to_drive(file_path, folder_id=None):
-    """Uploads a file to YOUR personal Google Drive via OAuth (no service account)."""
+    """Uploads a file to your personal Google Drive via OAuth."""
     creds = None
-
-    # remove any leftover service-account token
     token_path = "user_token.pickle"
     if os.path.exists(token_path):
         with open(token_path, "rb") as token:
@@ -21,7 +21,6 @@ def upload_to_drive(file_path, folder_id=None):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # explicitly tell it to use your client_secret.json
             flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
             creds = flow.run_local_server(port=0)
         with open(token_path, "wb") as token:
@@ -40,5 +39,5 @@ def upload_to_drive(file_path, folder_id=None):
         fields="id, name"
     ).execute()
 
-    print(f"✅ Uploaded {os.path.basename(file_path)} → your personal Drive.")
+    logger.info("Uploaded %s to Drive", os.path.basename(file_path))
     return uploaded.get("id")

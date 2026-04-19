@@ -1,8 +1,10 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 
+logger = logging.getLogger(__name__)
 app = FastAPI()
 
 app.add_middleware(
@@ -26,15 +28,12 @@ async def run_campaign(req: CampaignRequest):
     from portfolio import create_portfolio
     from sheets_logger import log_to_sheet
 
-    # Step 1: Extract services
     services = extract_services(req.website_url, limit=req.page_limit)
     if not is_valid_service_text(services):
+        logger.warning("Service extraction failed for %s", req.website_url)
         return {"error": "Could not extract services from this website."}
 
-    # Step 2: Discover leads
     leads = discover_clients(services)
-
-    # Step 3: Summarize + generate emails
     results = []
     for client in leads:
         try:
@@ -51,19 +50,18 @@ async def run_campaign(req: CampaignRequest):
                 "summary": summary if isinstance(summary, str) else str(summary),
                 "email": email
             })
-        except Exception as e:
-            print(f"Error processing {client.get('title')}: {e}")
+        except Exception:
+            logger.exception("Error processing client %s", client.get("title"))
 
-    # Step 4: Create portfolio
+    pdf_path = create_portfolio(req.business_name, services)
     pdf_path = create_portfolio(req.business_name, services)
 
-    # Step 5: Log to sheets
     try:
         for r in results:
             r["portfolio"] = os.path.basename(pdf_path)
         log_to_sheet(results)
-    except Exception as e:
-        print(f"Sheet logging failed: {e}")
+    except Exception:
+        logger.exception("Sheet logging failed.")
 
     return {
         "services": services,

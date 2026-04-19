@@ -1,10 +1,12 @@
+import logging
 from extractor import fetch_html, extract_text_blocks
 from groq import Groq
 import os
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def summarize_client(client):
@@ -19,8 +21,8 @@ def summarize_client(client):
     try:
         html = fetch_html(url)
         text = extract_text_blocks(html)
-    except Exception as e:
-        print(f"⚠️ Could not fetch {url}: {e}")
+    except Exception:
+        logger.exception("Could not fetch %s", url)
         return {
             "summary": "Unable to fetch site.",
             "pain_points": ["Unknown pain points"]
@@ -48,14 +50,14 @@ Pain Points:
 - <point 3>
 """
     try:
-        response = client.chat.completions.create(
+        response = ai_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000
         )
         return response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"⚠️ Groq summarizer failed: {e}")
+    except Exception:
+        logger.exception("AI summarization failed for %s", url)
         return {
             "summary": f"{client.get('title', 'Client')} — AI summary unavailable.",
             "pain_points": ["Could not analyze at this time"]

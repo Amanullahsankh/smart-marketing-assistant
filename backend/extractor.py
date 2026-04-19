@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import cloudscraper
@@ -10,8 +11,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 from groq import Groq
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 FAILURE_PHRASES = [
     "could not extract", "unable to extract",
@@ -36,14 +39,13 @@ def fetch_html(url, use_selenium=False):
         scraper = cloudscraper.create_scraper()
         r = scraper.get(url, headers=headers, timeout=12)
         if r.status_code == 200 and "<html" in r.text.lower() and len(r.text) > 2000:
-            print(f"✅ Cloudscraper fetched real HTML from {url}")
+            logger.info("Cloudscraper fetched real HTML from %s", url)
             return r.text
-        else:
-            print(f"⚠️ Cloudscraper returned incomplete HTML → {url}")
-            use_selenium = True
+        logger.warning("Cloudscraper returned incomplete HTML: %s", url)
+        use_selenium = True
 
         if use_selenium:
-            print(f"🌍 Using Selenium → {url}")
+            logger.info("Using Selenium: %s", url)
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
@@ -60,7 +62,7 @@ def fetch_html(url, use_selenium=False):
             driver.quit()
             return html
     except Exception as e:
-        print(f"⚠️ Fetch failed: {e}")
+        logger.exception("Fetch failed for %s", url)
         return ""
 
 
@@ -101,22 +103,23 @@ Website Content:
 {text[:6000]}
 """
     try:
-        response = client.chat.completions.create(
+        response = ai_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000
         )
         result = response.choices[0].message.content.strip()
         if not result or len(result) < 30:
-            return "⚠️ Could not extract services from website."
+            logger.warning("AI service returned incomplete service extraction result.")
+            return "Could not extract services from website."
         return result
     except Exception as e:
-        print(f"⚠️ Gemini error: {e}")
-        return "⚠️ Could not extract services from website."
+        logger.exception("AI service error during service extraction.")
+        return "Could not extract services from website."
 
 
 def extract_services(url, limit=3):
-    print(f"\n🌐 Scanning: {url}")
+    logger.info("Scanning: %s", url)
 
     if "juegostudio.com" in url:
         return """- Game Development: Full-cycle 2D & 3D game development for mobile, PC, and consoles.
@@ -127,32 +130,34 @@ def extract_services(url, limit=3):
 
     main_html = fetch_html(url)
     if not main_html:
-        return "⚠️ Could not access website."
+        logger.warning("Could not access website: %s", url)
+        return "Could not access website."
 
     all_text = extract_text_blocks(main_html)
 
     if len(all_text) < 1000:
         for path in ["/services", "/solutions", "/about", "/portfolio", "/company"]:
             alt_url = url.rstrip("/") + path
-            print(f"🔎 Trying fallback page: {alt_url}")
+            logger.info("Trying fallback page: %s", alt_url)
             html = fetch_html(alt_url)
             if html:
                 all_text += "\n" + extract_text_blocks(html)
 
     links = get_internal_links(url, main_html, limit)
     for link in links:
-        print(f"📄 Reading: {link}")
+        logger.info("Reading: %s", link)
         html = fetch_html(link)
         if html:
             all_text += "\n" + extract_text_blocks(html)
 
     if not all_text.strip():
-        return "⚠️ No meaningful text found."
+        logger.warning("No meaningful text found for %s", url)
+        return "No meaningful text found."
 
     services = ask_gemini_to_list_services(all_text, business_name=urlparse(url).netloc)
-    print("\n✅ Extracted Services:\n", services)
+    logger.info("Services extracted: %d chars", len(services))
     return services
 
 
 if __name__ == "__main__":
-    print(extract_services("https://www.juegostudio.com"))
+    logger.info(extract_services("https://www.juegostudio.com"))

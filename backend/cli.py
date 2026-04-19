@@ -1,17 +1,16 @@
+import logging
 import os
 import requests
 import re
 from dotenv import load_dotenv
 from openai import OpenAI
 
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
-openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# -----------------------------
-# 🧩 1️⃣ Extract Clean Keywords
-# -----------------------------
 def extract_keywords(services_text):
     """Extract core industry keywords from extracted services."""
     text = re.sub(r"[*•\-:]+", " ", services_text)
@@ -21,9 +20,6 @@ def extract_keywords(services_text):
     return list(set(keywords))[:5]
 
 
-# -----------------------------
-# 🔍 2️⃣ Use SerpAPI (Smarter Query)
-# -----------------------------
 def find_companies_serpapi(keyword):
     """Find companies likely to need these services."""
     try:
@@ -42,13 +38,10 @@ def find_companies_serpapi(keyword):
                 leads.append({"title": title.strip(), "link": link.strip()})
         return leads[:5]
     except Exception as e:
-        print(f"⚠️ SerpAPI failed for {keyword}: {e}")
+        logger.warning("SerpAPI request failed for %s: %s", keyword, e)
         return []
 
 
-# -----------------------------
-# 🤖 3️⃣ OpenAI Fallback
-# -----------------------------
 def find_companies_openai(services_text):
     """Ask OpenAI to name real companies that might need these services."""
     prompt = f"""
@@ -63,7 +56,7 @@ Return in this format:
 - Company Name: reason (1 line)
 """
     try:
-        resp = openai.chat.completions.create(
+        resp = ai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
@@ -71,30 +64,25 @@ Return in this format:
         )
         return resp.choices[0].message.content.strip()
     except Exception as e:
-        print(f"⚠️ OpenAI discovery failed: {e}")
-        return "⚠️ Could not fetch potential clients."
+        logger.warning("OpenAI discovery request failed: %s", e)
+        return "Could not fetch potential clients."
 
 
-# -----------------------------
-# 🚀 4️⃣ Main Function
-# -----------------------------
 def discover_clients(services_text):
     """Discover relevant B2B clients intelligently."""
-    print("🔍 Discovering clients for given services...")
+    logger.info("Discovering clients for given services.")
     keywords = extract_keywords(services_text)
-    print(f"🧩 Extracted keywords: {keywords}")
+    logger.info("Extracted keywords: %s", keywords)
 
     all_leads = []
 
-    # 🌐 Try SerpAPI if available
     if SERPAPI_KEY:
         for kw in keywords:
             leads = find_companies_serpapi(kw)
             all_leads.extend(leads)
 
-    # 🧠 If no SerpAPI or poor results, use OpenAI reasoning
     if not all_leads:
-        print("⚠️ Using AI reasoning fallback for discovery.")
+        logger.info("Using AI reasoning fallback for discovery.")
         ai_output = find_companies_openai(services_text)
         for line in ai_output.split("\n"):
             if line.strip().startswith("- "):
@@ -104,7 +92,6 @@ def discover_clients(services_text):
                 else:
                     all_leads.append({"title": parts[0].strip(), "link": "#", "reason": ""})
 
-    # 🧹 Remove duplicates
     seen = set()
     unique_leads = []
     for lead in all_leads:
@@ -113,13 +100,10 @@ def discover_clients(services_text):
             seen.add(title)
             unique_leads.append(lead)
 
-    print(f"✅ Found {len(unique_leads)} potential leads.")
+    logger.info("Found %d potential leads.", len(unique_leads))
     return unique_leads[:10]
 
 
-# -----------------------------
-# 🧪 Test
-# -----------------------------
 if __name__ == "__main__":
     test_services = """
     - Game Development: Full-cycle 2D & 3D game development for mobile, PC, and consoles.
@@ -128,4 +112,4 @@ if __name__ == "__main__":
     """
     leads = discover_clients(test_services)
     for l in leads:
-        print(f"🔗 {l['title']} → {l.get('link', '#')}")
+        logger.info("%s -> %s", l['title'], l.get('link', '#'))

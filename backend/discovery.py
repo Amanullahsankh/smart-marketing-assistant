@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -5,14 +6,18 @@ import requests
 from dotenv import load_dotenv
 from groq import Groq
 
+logger = logging.getLogger(__name__)
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 FAILURE_PHRASES = [
-    "could not extract", "unable to extract", "not extract",
-    "failed to extract", "no meaningful", "could not access",
-    "⚠️"
+    "could not extract",
+    "unable to extract",
+    "not extract",
+    "failed to extract",
+    "no meaningful",
+    "could not access"
 ]
 
 def is_valid_services(text: str) -> bool:
@@ -29,7 +34,6 @@ def extract_keywords(services_text):
         "their", "that", "with", "from", "this", "have", "will", "been"
     }
     keywords = [w.lower() for w in words if w.lower() not in ignore]
-    # Return unique top 5 meaningful keywords
     seen = set()
     unique = []
     for kw in keywords:
@@ -57,7 +61,7 @@ def find_companies_serpapi(keyword):
                 leads.append({"title": title.strip(), "link": link.strip()})
         return leads[:5]
     except Exception as e:
-        print(f"⚠️ SerpAPI failed for {keyword}: {e}")
+        logger.warning("SerpAPI request failed for %s: %s", keyword, e)
         return []
 
 
@@ -74,27 +78,25 @@ Return ONLY this format (one per line):
 - Company Name: one line reason
 """
     try:
-        response = client.chat.completions.create(
+        response = ai_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"⚠️ Groq discovery failed: {e}")
+        logger.warning("AI discovery request failed: %s", e)
         return ""
 
 
 def discover_clients(services_text):
-    print("🔍 Discovering clients for given services...")
-
-    # ✅ Guard: Stop if services extraction failed
+    logger.info("Discovering clients for given services.")
     if not is_valid_services(services_text):
-        print("❌ Invalid services text — stopping discovery.")
+        logger.warning("Invalid services text. Stopping discovery.")
         return []
 
     keywords = extract_keywords(services_text)
-    print(f"🧩 Extracted keywords: {keywords}")
+    logger.info("Extracted keywords: %s", keywords)
 
     all_leads = []
 
@@ -105,7 +107,7 @@ def discover_clients(services_text):
             time.sleep(1)
 
     if not all_leads:
-        print("⚠️ SerpAPI unavailable — using Gemini AI for discovery.")
+        logger.info("SerpAPI unavailable; falling back to AI discovery.")
         ai_output = find_companies_gemini(services_text)
         for line in ai_output.split("\n"):
             line = line.strip()
@@ -124,7 +126,6 @@ def discover_clients(services_text):
                         "reason": ""
                     })
 
-    # Deduplicate
     seen = set()
     unique_leads = []
     for lead in all_leads:
@@ -133,7 +134,7 @@ def discover_clients(services_text):
             seen.add(title)
             unique_leads.append(lead)
 
-    print(f"✅ Found {len(unique_leads)} potential leads.")
+    logger.info("Found %d potential leads.", len(unique_leads))
     return unique_leads[:10]
 
 
@@ -145,4 +146,4 @@ if __name__ == "__main__":
     """
     leads = discover_clients(test)
     for l in leads:
-        print(f"🔗 {l['title']} → {l.get('link', '#')}")
+        logger.info("%s -> %s", l['title'], l.get('link', '#'))

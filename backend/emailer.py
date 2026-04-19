@@ -1,9 +1,11 @@
+import logging
 from groq import Groq
 import os
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def generate_email(our_name, our_url, our_services_text, client_data, client_summary):
     client_name = client_data.get("title", "the client")
@@ -36,7 +38,7 @@ Body:
 <email body text>
 """
     try:
-        response = client.chat.completions.create(
+        response = ai_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000
@@ -57,8 +59,8 @@ Body:
 
         return {"subject": subject, "body": body}
 
-    except Exception as e:
-        print(f"Email generation failed: {e}")
+    except Exception:
+        logger.exception("Email generation failed for %s", client_name)
         return {
             "subject": f"Collaboration Opportunity with {our_name}",
             "body": (

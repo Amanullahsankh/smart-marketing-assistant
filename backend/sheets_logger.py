@@ -1,9 +1,11 @@
-# sheets_logger.py
+import logging
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -41,7 +43,6 @@ def log_to_sheet(results):
         "Last Contacted"
     ]
 
-    # Write header if sheet is empty
     if not ws.get_all_values():
         ws.append_row(headers)
 
@@ -49,13 +50,11 @@ def log_to_sheet(results):
         client = r.get("client", {})
         summary_data = r.get("summary", "")
 
-        # 🧩 Fix: Handle dictionary summaries
         if isinstance(summary_data, dict):
             summary_text = summary_data.get("summary", "")
         else:
             summary_text = str(summary_data)
 
-        # 🧩 Fix: Handle string vs dict emails
         email_data = r.get("email", {})
         if isinstance(email_data, dict):
             subject = email_data.get("subject", "")
@@ -64,7 +63,6 @@ def log_to_sheet(results):
             subject = "N/A"
             body = str(email_data)
 
-        # Append cleaned data
         ws.append_row([
             client.get("title", ""),
             client.get("link", ""),
@@ -76,4 +74,4 @@ def log_to_sheet(results):
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ])
 
-    print("✅ Data successfully logged with response tracking enabled.")
+    logger.info("Data successfully logged with response tracking enabled.")
