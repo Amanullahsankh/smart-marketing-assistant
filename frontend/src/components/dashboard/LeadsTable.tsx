@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ExternalLink, Send, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Lead, LeadStatus } from '../../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '/api';
+const API_BASE_URL = '/api';
 
 interface LeadsTableProps {
   leads: Lead[];

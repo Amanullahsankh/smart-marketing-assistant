@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CRMLead } from '../types';
 import { Download, Users, Mail, Building, Calendar, AlertCircle, Clock, CheckCircle2, Filter } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '/api';
+const API_BASE_URL = '/api';
 
 interface Campaign {
   id: string;
