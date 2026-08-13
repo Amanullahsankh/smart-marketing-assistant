@@ -31,7 +31,7 @@ class EmailRequest(BaseModel):
     campaign_id: str = None
     company_name: str = None
 
-@app.post("/run-campaign")
+@app.post("/api/run-campaign")
 async def run_campaign(req: CampaignRequest):
     try:
         from .extractor import extract_services, is_valid_service_text
@@ -132,11 +132,11 @@ async def run_campaign(req: CampaignRequest):
         "firebase_doc_id": firebase_doc_id
     }
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "ok"}
 
-@app.post("/send-email")
+@app.post("/api/send-email")
 async def send_email_api(req: EmailRequest):
     from email_service import send_email
     from firebase_admin import firestore
@@ -166,7 +166,7 @@ async def send_email_api(req: EmailRequest):
         logger.exception("Failed to send email")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/campaigns")
+@app.get("/api/campaigns")
 async def get_campaigns():
     from firebase_admin import firestore
     try:
@@ -182,7 +182,7 @@ async def get_campaigns():
         logger.exception("Failed to fetch campaigns")
         return {"error": str(e)}
 
-@app.get("/leads")
+@app.get("/api/leads")
 async def get_leads(campaign_id: str = None):
     from firebase_admin import firestore
     try:
@@ -206,7 +206,7 @@ async def get_leads(campaign_id: str = None):
         logger.exception("Failed to fetch leads")
         return {"error": str(e)}
 
-@app.get("/export-csv")
+@app.get("/api/export-csv")
 async def export_csv(campaign_id: str = None):
     from firebase_admin import firestore
     from fastapi.responses import StreamingResponse
