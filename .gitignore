@@ -1,9 +1,13 @@
 # Python
 .env
+*.env.local
+*.env.*
 backend/.env
+firebase.json
 credentials.json
 client_secret.json
 user_token.pickle
+**/*service-account*.json
 __pycache__/
 *.pyc
 .venv/
