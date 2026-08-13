@@ -1,25 +1,26 @@
 {
-  "version": 2,
-  "builds": [
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "backend/",
+      "entrypoint": "api:app"
+    }
+  },
+  "rewrites": [
     {
-      "src": "backend/api.py",
-      "use": "@vercel/python"
+      "source": "/api/:path*",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
       }
     }
-  ],
-  "routes": [
-    { "src": "/run-campaign", "dest": "/backend/api.py" },
-    { "src": "/health", "dest": "/backend/api.py" },
-    { "src": "/send-email", "dest": "/backend/api.py" },
-    { "src": "/campaigns", "dest": "/backend/api.py" },
-    { "src": "/leads", "dest": "/backend/api.py" },
-    { "src": "/export-csv", "dest": "/backend/api.py" },
-    { "src": "/(.*)", "dest": "/frontend/index.html" }
   ]
 }

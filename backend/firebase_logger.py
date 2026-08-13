@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import datetime
@@ -6,17 +7,38 @@ from firebase_admin import credentials, firestore
 
 logger = logging.getLogger(__name__)
 
+
+def _load_firebase_credentials():
+    """Load Firebase service account credentials from Vercel env var or local file."""
+    env_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    if env_json:
+        try:
+            parsed = json.loads(env_json)
+            if isinstance(parsed, dict) and parsed.get("type") == "service_account":
+                return parsed
+            logger.error("FIREBASE_CREDENTIALS_JSON is present but does not contain a valid service account payload.")
+            return None
+        except json.JSONDecodeError:
+            logger.error("FIREBASE_CREDENTIALS_JSON is present but is not valid JSON.")
+            return None
+
+    cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase.json')
+    if os.path.exists(cred_path):
+        return cred_path
+
+    logger.error("Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON or provide the local firebase.json file.")
+    return None
+
+
 # Initialize Firebase app only once
 def initialize_firebase():
     if not firebase_admin._apps:
         try:
-            cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase.json')
-            if not os.path.exists(cred_path):
-                logger.error(f"Firebase credentials not found at {cred_path}")
+            cred = _load_firebase_credentials()
+            if cred is None:
                 return False
-            
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
+
+            firebase_admin.initialize_app(credentials.Certificate(cred))
             logger.info("Firebase Admin initialized successfully.")
             return True
         except Exception as e:

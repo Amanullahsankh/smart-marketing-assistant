@@ -8,6 +8,10 @@ credentials.json
 client_secret.json
 user_token.pickle
 **/*service-account*.json
+**/*.pem
+**/*.key
+**/*.p12
+**/*.crt
 __pycache__/
 *.pyc
 .venv/
@@ -16,7 +20,7 @@ seen.json
 scheduler.log
 
 # Node
-frontend/node_modules/
+**/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local

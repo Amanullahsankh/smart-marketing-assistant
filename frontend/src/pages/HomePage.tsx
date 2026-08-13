@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Zap, Globe, Building2, ArrowRight, CheckCircle2, Shield, BarChart3 } from 'lucide-react';
 import { CampaignFormData, ScanDepth } from '../types';
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '/api';
 
 interface HomePageProps {
   onSubmit: (data: CampaignFormData) => void;
