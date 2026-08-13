@@ -167,40 +167,61 @@ html, body, [class*="css"] {
 
 # ── Safe imports ────────────────────────────────────────────────────
 try:
-    from extractor import extract_services, is_valid_service_text
+    from .extractor import extract_services, is_valid_service_text
 except ImportError:
-    extract_services = lambda url, limit=3: "Could not extract services."
-    is_valid_service_text = lambda t: False
+    try:
+        from extractor import extract_services, is_valid_service_text
+    except ImportError:
+        extract_services = lambda url, limit=3: "Could not extract services."
+        is_valid_service_text = lambda t: False
 
 try:
-    from discovery import discover_clients
+    from .discovery import discover_clients
 except ImportError:
-    discover_clients = lambda s: []
+    try:
+        from discovery import discover_clients
+    except ImportError:
+        discover_clients = lambda s: []
 
 try:
-    from summarizer import summarize_client
+    from .summarizer import summarize_client
 except ImportError:
-    summarize_client = lambda c: "No summary available."
+    try:
+        from summarizer import summarize_client
+    except ImportError:
+        summarize_client = lambda c: "No summary available."
 
 try:
-    from emailer import generate_email
+    from .emailer import generate_email
 except ImportError:
-    generate_email = lambda *a, **k: {"subject": "Demo Subject", "body": "Demo email body."}
+    try:
+        from emailer import generate_email
+    except ImportError:
+        generate_email = lambda *a, **k: {"subject": "Demo Subject", "body": "Demo email body."}
 
 try:
-    from portfolio import create_portfolio
+    from .portfolio import create_portfolio
 except ImportError:
-    create_portfolio = lambda n, t: f"{n}_Portfolio.pdf"
+    try:
+        from portfolio import create_portfolio
+    except ImportError:
+        create_portfolio = lambda n, t: f"{n}_Portfolio.pdf"
 
 try:
-    from drive_uploader import upload_to_drive
+    from .drive_uploader import upload_to_drive
 except ImportError:
-    upload_to_drive = lambda f: None
+    try:
+        from drive_uploader import upload_to_drive
+    except ImportError:
+        upload_to_drive = lambda f: None
 
 try:
-    from sheets_logger import log_to_sheet
+    from .sheets_logger import log_to_sheet
 except ImportError:
-    log_to_sheet = lambda r: None
+    try:
+        from sheets_logger import log_to_sheet
+    except ImportError:
+        log_to_sheet = lambda r: None
 
 
 # ── Navbar ──────────────────────────────────────────────────────────

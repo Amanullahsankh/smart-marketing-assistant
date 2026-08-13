@@ -13,3 +13,4 @@ reportlab
 python-dotenv
 duckduckgo-search
 groq
+firebase-admin==7.5.0

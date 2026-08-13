@@ -3,7 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
-import firebase_logger
+
+try:
+    from . import firebase_logger
+except ImportError:  # pragma: no cover - local script execution
+    import firebase_logger
 
 logger = logging.getLogger(__name__)
 app = FastAPI()
@@ -29,14 +33,24 @@ class EmailRequest(BaseModel):
 
 @app.post("/run-campaign")
 async def run_campaign(req: CampaignRequest):
-    from extractor import extract_services, is_valid_service_text
-    from discovery import discover_clients
-    from summarizer import summarize_client
-    from emailer import generate_email, filter_icp
-    from portfolio import create_portfolio
-    from sheets_logger import log_to_sheet
-    from drive_uploader import upload_to_drive
-    from firebase_logger import save_campaign_to_firebase
+    try:
+        from .extractor import extract_services, is_valid_service_text
+        from .discovery import discover_clients
+        from .summarizer import summarize_client
+        from .emailer import generate_email, filter_icp
+        from .portfolio import create_portfolio
+        from .sheets_logger import log_to_sheet
+        from .drive_uploader import upload_to_drive
+        from .firebase_logger import save_campaign_to_firebase
+    except ImportError:  # pragma: no cover - local script execution
+        from extractor import extract_services, is_valid_service_text
+        from discovery import discover_clients
+        from summarizer import summarize_client
+        from emailer import generate_email, filter_icp
+        from portfolio import create_portfolio
+        from sheets_logger import log_to_sheet
+        from drive_uploader import upload_to_drive
+        from firebase_logger import save_campaign_to_firebase
     import datetime
 
     services = extract_services(req.website_url, limit=req.page_limit)

@@ -1,7 +1,11 @@
 import logging
-from ai_utils import generate_ai_response
 import os
 from dotenv import load_dotenv
+
+try:
+    from .ai_utils import generate_ai_response
+except ImportError:  # pragma: no cover - local script execution
+    from ai_utils import generate_ai_response
 
 logger = logging.getLogger(__name__)
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))

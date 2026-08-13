@@ -8,7 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-from ai_utils import generate_ai_response
+try:
+    from .ai_utils import generate_ai_response
+except ImportError:  # pragma: no cover - local script execution
+    from ai_utils import generate_ai_response
 
 logger = logging.getLogger(__name__)
 
