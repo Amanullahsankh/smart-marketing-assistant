@@ -1,13 +1,25 @@
 {
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "vite"
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/api.py",
+      "use": "@vercel/python"
     },
-    "backend": {
-      "root": ".",
-      "framework": "fastapi",
-      "entrypoint": "app.py"
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
-  }
+  ],
+  "routes": [
+    { "src": "/run-campaign", "dest": "/backend/api.py" },
+    { "src": "/health", "dest": "/backend/api.py" },
+    { "src": "/send-email", "dest": "/backend/api.py" },
+    { "src": "/campaigns", "dest": "/backend/api.py" },
+    { "src": "/leads", "dest": "/backend/api.py" },
+    { "src": "/export-csv", "dest": "/backend/api.py" },
+    { "src": "/(.*)", "dest": "/frontend/index.html" }
+  ]
 }

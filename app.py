@@ -394,7 +394,7 @@ with right_col:
             else:
                 st.info("Portfolio upload skipped.")
         with col2:
-            sheet_link = "https://docs.google.com/spreadsheets/d/16MvwG0MAbRhDNJVB34Dhcc9l45hO7qRnkBJLXYJufYQ"
+            sheet_link = "https://docs.google.com/spreadsheets/d/12G14ucALb0G1sK2MyI_ivB_lsAKoZy5bzg0eNWutR3g/edit?usp=sharing"
             st.markdown(f'<a href="{sheet_link}" target="_blank" style="display:block;text-align:center;padding:0.6rem;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;color:#1d4ed8;font-size:13px;font-weight:500;text-decoration:none;">Open Google Sheet</a>', unsafe_allow_html=True)
 
         st.balloons()

@@ -10,6 +10,9 @@ export interface Lead {
   source: string;
   status: LeadStatus;
   email?: string;
+  subject?: string;
+  body?: string;
+  campaign_id?: string;
 }
 
 export interface GeneratedEmail {
@@ -40,4 +43,14 @@ export interface CampaignMetrics {
   emailsGenerated: number;
   portfolio: number;
   sheetRows: number;
+}
+
+export interface CRMLead {
+  id: string;
+  lead_email: string;
+  company_name: string;
+  persona: string;
+  last_action: string;
+  next_followup_date: string;
+  status: string;
 }

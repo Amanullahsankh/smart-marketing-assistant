@@ -20,10 +20,10 @@ const STEP_DELAYS_MS = [1200, 2600, 3800, 5200, 6400, 7800];
 
 interface ResultsDashboardProps {
   campaign: CampaignFormData;
-  onBack: () => void;
+  onNewCampaign: () => void;
 }
 
-export default function ResultsDashboard({ campaign, onBack }: ResultsDashboardProps) {
+export default function ResultsDashboard({ campaign, onNewCampaign }: ResultsDashboardProps) {
   const [steps, setSteps] = useState<PipelineStep[]>(
     PIPELINE_LABELS.map((label, idx) => ({ id: idx, label, status: 'idle' }))
   );
@@ -69,13 +69,23 @@ export default function ResultsDashboard({ campaign, onBack }: ResultsDashboardP
     { label: 'Sheet Rows', value: campaign.results?.length ?? 0, sub: 'logged to Drive' },
   ];
 
-  const leads = (campaign.leads ?? []).map((lead: any, idx: number) => ({
-    id: idx,
-    company: lead.title ?? 'Unknown',
-    website: lead.link ?? '#',
-    status: 'new',
-    source: 'AI Discovery',
-  }));
+  const leads = (campaign.leads ?? []).map((lead: any, idx: number) => {
+    const emailData = campaign.results?.[idx]?.email;
+    const domain = lead.link ? lead.link.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : "";
+    const leadEmail = lead.email || (domain ? `contact@${domain}` : "contact@unknown.com");
+    
+    return {
+      id: String(idx),
+      company: lead.title ?? 'Unknown',
+      website: lead.link ?? '#',
+      status: 'New',
+      source: 'AI Discovery',
+      email: leadEmail,
+      subject: emailData?.subject ?? '',
+      body: emailData?.body ?? '',
+      campaign_id: (campaign as any).firebase_doc_id
+    };
+  });
 
   const emails = (campaign.results ?? []).map((r: any, idx: number) => ({
     id: idx,
@@ -91,11 +101,11 @@ export default function ResultsDashboard({ campaign, onBack }: ResultsDashboardP
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={onBack}
+                onClick={onNewCampaign}
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft size={15} />
-                Campaigns
+                New Campaign
               </button>
               <span className="text-gray-300">/</span>
               <div>
@@ -157,7 +167,7 @@ export default function ResultsDashboard({ campaign, onBack }: ResultsDashboardP
         </div>
 
         <div className="flex justify-end">
-          <OutputButtons visible={dataVisible} sheetUrl="https://docs.google.com/spreadsheets/d/16MvwG0MAbRhDNJVB34Dhcc9l45hO7qRnkBJLXYJufYQ" />
+          <OutputButtons visible={dataVisible} sheetUrl="https://docs.google.com/spreadsheets/d/12G14ucALb0G1sK2MyI_ivB_lsAKoZy5bzg0eNWutR3g/edit?usp=sharing" />
         </div>
       </div>
     </div>

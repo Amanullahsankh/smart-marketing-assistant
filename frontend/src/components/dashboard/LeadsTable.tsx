@@ -1,5 +1,8 @@
-import { ExternalLink, Send, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { ExternalLink, Send, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Lead, LeadStatus } from '../../types';
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -7,6 +10,46 @@ interface LeadsTableProps {
 }
 
 export default function LeadsTable({ leads, visible }: LeadsTableProps) {
+  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+
+  const handleSend = async (lead: Lead) => {
+    if (!lead.email || !lead.subject || !lead.body) {
+      alert("Missing email information");
+      return;
+    }
+    
+    setSendingIds(prev => new Set(prev).add(lead.id));
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to_email: lead.email,
+          subject: lead.subject,
+          body: lead.body,
+          campaign_id: lead.campaign_id,
+          company_name: lead.company
+        })
+      });
+      
+      if (res.ok) {
+        setSentIds(prev => new Set(prev).add(lead.id));
+      } else {
+        alert("Failed to send email");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An error occurred while sending");
+    } finally {
+      setSendingIds(prev => {
+        const next = new Set(prev);
+        next.delete(lead.id);
+        return next;
+      });
+    }
+  };
   return (
     <div
       className={`bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-500 ${
@@ -68,13 +111,23 @@ export default function LeadsTable({ leads, visible }: LeadsTableProps) {
                   <span className="text-sm text-gray-600">{lead.source}</span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <StatusPill status={lead.status} />
+                  <StatusPill status={sentIds.has(lead.id) ? 'Sent' : lead.status} />
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
-                    <button className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors">
-                      <Send size={11} />
-                      Send
+                    <button 
+                      onClick={() => handleSend(lead)}
+                      disabled={sendingIds.has(lead.id) || sentIds.has(lead.id) || lead.status === 'Sent'}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sendingIds.has(lead.id) ? (
+                        <Loader2 size={11} className="animate-spin" />
+                      ) : sentIds.has(lead.id) || lead.status === 'Sent' ? (
+                        <Check size={11} className="text-emerald-600" />
+                      ) : (
+                        <Send size={11} />
+                      )}
+                      {sendingIds.has(lead.id) ? 'Sending...' : sentIds.has(lead.id) || lead.status === 'Sent' ? 'Sent' : 'Send'}
                     </button>
                     <button className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-2 py-1.5 rounded-lg transition-colors">
                       <ExternalLink size={11} />

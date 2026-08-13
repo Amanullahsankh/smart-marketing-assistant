@@ -1,14 +1,11 @@
 import logging
 from extractor import fetch_html, extract_text_blocks
-from groq import Groq
+from ai_utils import generate_ai_response
 import os
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-load_dotenv()
-ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 def summarize_client(client):
     url = client.get("link", "")
 
@@ -40,7 +37,7 @@ Summarize this company's offering in 3 concise sentences.
 Then list 3 possible business challenges or pain points they might face.
 
 Website text:
-{text[:3000]}
+{text[:2000]}
 
 Return ONLY this exact format:
 Summary: <3 sentences>
@@ -50,12 +47,14 @@ Pain Points:
 - <point 3>
 """
     try:
-        response = ai_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000
+        content = generate_ai_response(
+            prompt=prompt,
+            model="llama-3.1-8b-instant",
+            max_tokens=250,
+            temperature=0.3,
+            system_prompt="You are a B2B marketing analyst."
         )
-        return response.choices[0].message.content.strip()
+        return content
     except Exception:
         logger.exception("AI summarization failed for %s", url)
         return {

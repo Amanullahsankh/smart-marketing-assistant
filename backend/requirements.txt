@@ -1,11 +1,8 @@
-streamlit
 fastapi
 uvicorn
 requests
 cloudscraper
 beautifulsoup4
-selenium
-webdriver-manager
 google-generativeai
 google-auth-oauthlib
 google-auth-httplib2
@@ -14,5 +11,5 @@ gspread
 oauth2client
 reportlab
 python-dotenv
-schedule
 duckduckgo-search
+groq

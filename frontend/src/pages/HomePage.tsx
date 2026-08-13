@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Zap, Globe, Building2, ArrowRight, CheckCircle2, Shield, BarChart3 } from 'lucide-react';
 import { CampaignFormData, ScanDepth } from '../types';
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+
 interface HomePageProps {
   onSubmit: (data: CampaignFormData) => void;
 }
@@ -36,7 +38,7 @@ export default function HomePage({ onSubmit }: HomePageProps) {
   setLoading(true);
 
   try {
-    const response = await fetch("http://localhost:8000/run-campaign", {
+    const response = await fetch(`${API_BASE_URL}/run-campaign`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

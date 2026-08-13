@@ -18,7 +18,7 @@ export default function OutputButtons({ visible, driveUrl, sheetUrl }: OutputBut
         <ExternalLink size={16} />
         View Portfolio on Drive
       </button>
-      <button onClick={() => window.open(sheetUrl ?? 'https://docs.google.com/spreadsheets/d/16MvwG0MAbRhDNJVB34Dhcc9l45hO7qRnkBJLXYJufYQ', '_blank')} className="flex items-center justify-center gap-2.5 px-5 py-3 bg-blue-700 text-white rounded-xl font-semibold text-sm hover:bg-blue-800 transition-colors shadow-sm shadow-blue-200">
+      <button onClick={() => window.open(sheetUrl ?? 'https://docs.google.com/spreadsheets/d/12G14ucALb0G1sK2MyI_ivB_lsAKoZy5bzg0eNWutR3g/edit?usp=sharing', '_blank')} className="flex items-center justify-center gap-2.5 px-5 py-3 bg-blue-700 text-white rounded-xl font-semibold text-sm hover:bg-blue-800 transition-colors shadow-sm shadow-blue-200">
         <Sheet size={16} />
         Open Google Sheet
       </button>

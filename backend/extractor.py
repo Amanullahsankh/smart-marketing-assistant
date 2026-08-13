@@ -1,21 +1,18 @@
 import logging
 import os
 import time
+from urllib.parse import urlencode, urljoin, urlparse
+
 import cloudscraper
+import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from urllib.parse import urljoin, urlparse
-from webdriver_manager.chrome import ChromeDriverManager
-from groq import Groq
 from dotenv import load_dotenv
+
+from ai_utils import generate_ai_response
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-ai_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 FAILURE_PHRASES = [
     "could not extract", "unable to extract",
     "not extract", "failed to extract",
@@ -42,28 +39,29 @@ def fetch_html(url, use_selenium=False):
             logger.info("Cloudscraper fetched real HTML from %s", url)
             return r.text
         logger.warning("Cloudscraper returned incomplete HTML: %s", url)
-        use_selenium = True
+    except Exception as exc:
+        logger.warning("Cloudscraper failed for %s: %s", url, exc)
 
-        if use_selenium:
-            logger.info("Using Selenium: %s", url)
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_argument("--window-size=1920,1080")
-            driver = webdriver.Chrome(
-                service=Service(ChromeDriverManager().install()),
-                options=chrome_options
-            )
-            driver.get(url)
-            time.sleep(4)
-            html = driver.page_source
-            driver.quit()
-            return html
-    except Exception as e:
-        logger.exception("Fetch failed for %s", url)
-        return ""
+    scraper_api_key = os.getenv("SCRAPERAPI_KEY")
+    if scraper_api_key:
+        try:
+            params = {
+                "api_key": scraper_api_key,
+                "url": url,
+                "render": "false",
+            }
+            scraper_api_url = f"https://api.scraperapi.com/?{urlencode(params)}"
+            response = requests.get(scraper_api_url, headers=headers, timeout=20)
+            if response.status_code == 200 and "<html" in response.text.lower() and len(response.text) > 2000:
+                logger.info("ScraperAPI fetched real HTML from %s", url)
+                return response.text
+            logger.warning("ScraperAPI returned incomplete HTML for %s", url)
+        except Exception:
+            logger.exception("ScraperAPI fallback failed for %s", url)
+    else:
+        logger.warning("SCRAPERAPI_KEY not set; skipping ScraperAPI fallback for %s", url)
+
+    return ""
 
 
 def extract_text_blocks(html):
@@ -93,22 +91,37 @@ def get_internal_links(base_url, html, limit=3):
 
 def ask_gemini_to_list_services(text, business_name=""):
     prompt = f"""
-You are an AI assistant that extracts real company services from website text.
-Return a clean bullet list of services with short, descriptive explanations.
-Avoid generic words unless they appear explicitly in the content.
+You are an intelligent B2B sales assistant.
+
+STEP 1: ANALYZE COMPANY (VERY IMPORTANT)
+From the website, identify:
+* What the company does (services/products)
+* Target customers (who they sell to)
+* Industry
+* Key value proposition
+
+STEP 2: DEFINE IDEAL CLIENT PROFILE (ICP)
+Based on the analysis:
+* Who actually needs these services?
+* Which industries benefit most?
+* What type of companies will PAY for this?
+(e.g., If logistics service -> fleet companies. If IT services -> mid-size companies needing outsourcing. If healthcare SaaS -> hospitals/clinics)
+
+Return a concise, highly descriptive summary combining the Company Analysis and the exact Ideal Client Profile. Make it clear and structured.
 
 Company: {business_name}
 
 Website Content:
-{text[:6000]}
+{text[:2500]}
 """
     try:
-        response = ai_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000
+        result = generate_ai_response(
+            prompt=prompt,
+            model="llama-3.1-8b-instant",
+            max_tokens=500,
+            temperature=0.3,
+            system_prompt="You are a precise AI assistant that analyzes companies and defines their Ideal Client Profile (ICP)."
         )
-        result = response.choices[0].message.content.strip()
         if not result or len(result) < 30:
             logger.warning("AI service returned incomplete service extraction result.")
             return "Could not extract services from website."
