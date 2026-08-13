@@ -1,2 +1,26 @@
+[project]
+name = "smart-marketing-assistant-backend"
+version = "0.1.0"
+description = "FastAPI backend for the Smart Marketing Assistant"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "requests",
+    "cloudscraper",
+    "beautifulsoup4",
+    "google-generativeai",
+    "google-auth-oauthlib",
+    "google-auth-httplib2",
+    "google-api-python-client",
+    "gspread",
+    "oauth2client",
+    "reportlab",
+    "python-dotenv",
+    "duckduckgo-search",
+    "groq",
+    "firebase-admin==7.5.0",
+]
+
 [tool.vercel]
 entrypoint = "api:app"
