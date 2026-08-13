@@ -142,8 +142,9 @@ async def send_email_api(req: EmailRequest):
     from firebase_admin import firestore
     import re
     from fastapi import HTTPException
-    
+
     try:
+        firebase_logger.initialize_firebase()
         # Call the email service
         send_email(req.to_email, req.subject, req.body)
         
@@ -170,6 +171,7 @@ async def send_email_api(req: EmailRequest):
 async def get_campaigns():
     from firebase_admin import firestore
     try:
+        firebase_logger.initialize_firebase()
         db = firestore.client()
         docs = db.collection('campaigns').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
         campaigns = []
@@ -188,7 +190,8 @@ async def get_leads(campaign_id: str = None):
     try:
         if not campaign_id:
             return []
-            
+
+        firebase_logger.initialize_firebase()
         db = firestore.client()
         leads_ref = db.collection('campaigns').document(campaign_id).collection('leads')
         docs = leads_ref.order_by('created_at', direction=firestore.Query.ASCENDING).stream()
@@ -216,7 +219,8 @@ async def export_csv(campaign_id: str = None):
     try:
         if not campaign_id:
             return {"error": "campaign_id is required"}
-            
+
+        firebase_logger.initialize_firebase()
         db = firestore.client()
         leads_ref = db.collection('campaigns').document(campaign_id).collection('leads')
         docs = leads_ref.order_by('created_at', direction=firestore.Query.ASCENDING).stream()

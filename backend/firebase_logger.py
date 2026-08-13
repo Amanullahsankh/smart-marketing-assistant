@@ -30,21 +30,26 @@ def _load_firebase_credentials():
     return None
 
 
-# Initialize Firebase app only once
+# Initialize Firebase app only once and reuse any existing default app.
 def initialize_firebase():
-    if not firebase_admin._apps:
-        try:
-            cred = _load_firebase_credentials()
-            if cred is None:
-                return False
+    try:
+        firebase_admin.get_app()
+        logger.info("Firebase Admin already initialized; reusing the existing app.")
+        return True
+    except ValueError:
+        pass
 
-            firebase_admin.initialize_app(credentials.Certificate(cred))
-            logger.info("Firebase Admin initialized successfully.")
-            return True
-        except Exception as e:
-            logger.exception(f"Failed to initialize Firebase: {e}")
-            return False
-    return True
+    try:
+        cred = _load_firebase_credentials()
+        if cred is None:
+            raise RuntimeError("Firebase credentials are missing. Set FIREBASE_CREDENTIALS_JSON or provide the local firebase.json file.")
+
+        firebase_admin.initialize_app(credentials.Certificate(cred))
+        logger.info("Firebase Admin initialized successfully.")
+        return True
+    except Exception as e:
+        logger.exception(f"Failed to initialize Firebase: {e}")
+        raise
 
 # Ensure initialization on import
 initialize_firebase()
@@ -54,11 +59,8 @@ def save_campaign_to_firebase(data: dict) -> str:
     Saves the structured campaign data and leads to Firestore.
     Returns the campaign document ID if successful, otherwise None.
     """
-    if not firebase_admin._apps:
-        logger.error("Cannot save to Firebase: Firebase is not initialized.")
-        return None
-
     try:
+        initialize_firebase()
         db = firestore.client()
         
         # 1. Save Campaign Data
